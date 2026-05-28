@@ -101,8 +101,8 @@ class LogoutViewTests(APITestCase):
 
     def _authenticate(self):
         refresh = RefreshToken.for_user(self.user)
+        self.client.cookies['access_token'] = str(refresh.access_token)
         self.client.cookies['refresh_token'] = str(refresh)
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
         return refresh
 
     def test_success(self):
