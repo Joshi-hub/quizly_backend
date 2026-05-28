@@ -31,4 +31,4 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(**data)
         if not user:
             raise AuthenticationFailed("Ungültige Anmeldedaten.")
-        return {'user': user}           
+        return {'user': user}                    
