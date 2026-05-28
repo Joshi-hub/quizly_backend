@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 from .serializers import RegisterSerializer, LoginSerializer
 
@@ -36,6 +37,27 @@ class LoginView(APIView):
         response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='Lax')
         
         return response    
+
+
+class TokenRefreshCookieView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        raw_refresh = request.COOKIES.get('refresh_token')
+        if not raw_refresh:
+            return Response({"detail": "Refresh token missing."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            refresh = RefreshToken(raw_refresh)
+            new_access = str(refresh.access_token)
+        except TokenError:
+            return Response({"detail": "Refresh token invalid or expired."}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        response = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
+        response.set_cookie('access_token', new_access, httponly=True, samesite='Lax')
+        return response
 
 
 class LogoutView(APIView):
