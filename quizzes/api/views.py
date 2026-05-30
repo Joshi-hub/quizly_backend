@@ -20,6 +20,24 @@ def _extract_video_id(url):
     return match.group(1) if match else None
 
 
+class QuizDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _resolve_quiz(self, pk, user):
+        try:
+            quiz = Quiz.objects.prefetch_related('questions').get(pk=pk)
+        except Quiz.DoesNotExist:
+            return None, Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if quiz.user != user:
+            return None, Response({'detail': 'Access denied.'}, status=status.HTTP_403_FORBIDDEN)
+        return quiz, None
+
+    def get(self, request, pk):
+        quiz, error = self._resolve_quiz(pk, request.user)
+        if error:
+            return error
+        return Response(QuizSerializer(quiz).data, status=status.HTTP_200_OK)
+
 class QuizCreateView(APIView):
     permission_classes = [IsAuthenticated]
 

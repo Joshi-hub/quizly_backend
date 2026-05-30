@@ -14,3 +14,4 @@ class QuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = ['id', 'title', 'description', 'created_at', 'updated_at', 'video_url', 'questions']
+        read_only_fields = ['id', 'video_url', 'created_at', 'updated_at']
