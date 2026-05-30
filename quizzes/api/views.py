@@ -23,6 +23,10 @@ def _extract_video_id(url):
 class QuizCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        quizzes = Quiz.objects.filter(user=request.user).prefetch_related('questions')
+        return Response(QuizSerializer(quizzes, many=True).data, status=status.HTTP_200_OK)
+
     def post(self, request):
         url = request.data.get('url', '').strip()
         if not url:
@@ -45,6 +49,7 @@ class QuizCreateView(APIView):
             return Response({'detail': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         quiz = Quiz.objects.create(
+            user=request.user,
             title=data['title'],
             description=data['description'],
             video_url=canonical_url,
