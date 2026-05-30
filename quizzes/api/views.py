@@ -38,6 +38,24 @@ class QuizDetailView(APIView):
             return error
         return Response(QuizSerializer(quiz).data, status=status.HTTP_200_OK)
 
+    def patch(self, request, pk):
+        quiz, error = self._resolve_quiz(pk, request.user)
+        if error:
+            return error
+        serializer = QuizSerializer(quiz, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        quiz, error = self._resolve_quiz(pk, request.user)
+        if error:
+            return error
+        quiz.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class QuizCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
