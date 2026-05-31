@@ -128,6 +128,7 @@ STATIC_URL = 'static/'
 
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+FFMPEG_LOCATION = os.environ.get('FFMPEG_LOCATION', '')
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5500',
