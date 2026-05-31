@@ -3,7 +3,10 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 
 class CookieJWTAuthentication(JWTAuthentication):
+    """Reads the JWT access token from the access_token HTTP-only cookie."""
+
     def authenticate(self, request):
+        """Returns (user, token) from cookie, or None if absent or invalid."""
         raw_token = request.COOKIES.get('access_token')
         if raw_token is None:
             return None

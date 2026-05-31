@@ -9,9 +9,12 @@ from .serializers import RegisterSerializer, LoginSerializer
 
 
 class RegisterView(APIView):
+    """Registers a new user account."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Validates and saves a new user, returns 201 on success."""
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -20,59 +23,62 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    """Authenticates a user and sets JWT cookies."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Validates credentials and sets access_token and refresh_token cookies."""
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
-        
         response = Response({
-            "detail": "Login successfully!",
-            "user": {"id": user.id, "username": user.username, "email": user.email}
+            'detail': 'Login successfully!',
+            'user': {'id': user.id, 'username': user.username, 'email': user.email},
         }, status=status.HTTP_200_OK)
-        
         response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='Lax')
         response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='Lax')
-        
-        return response    
+        return response
 
 
 class TokenRefreshCookieView(APIView):
+    """Issues a new access token using the refresh token cookie."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Reads refresh_token cookie and returns a new access_token cookie."""
         raw_refresh = request.COOKIES.get('refresh_token')
         if not raw_refresh:
-            return Response({"detail": "Refresh token missing."}, status=status.HTTP_401_UNAUTHORIZED)
-
+            return Response({'detail': 'Refresh token missing.'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             refresh = RefreshToken(raw_refresh)
             new_access = str(refresh.access_token)
         except TokenError:
-            return Response({"detail": "Refresh token invalid or expired."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'detail': 'Refresh token invalid or expired.'}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        response = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
+        response = Response({'detail': 'Token refreshed'}, status=status.HTTP_200_OK)
         response.set_cookie('access_token', new_access, httponly=True, samesite='Lax')
         return response
 
 
 class LogoutView(APIView):
+    """Logs out the user, blacklists the refresh token and clears cookies."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """Blacklists the refresh token and deletes both JWT cookies."""
         try:
             refresh_token = request.COOKIES.get('refresh_token')
             if refresh_token:
                 RefreshToken(refresh_token).blacklist()
         except Exception:
             pass
-
         response = Response(
-            {"detail": "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."},
+            {'detail': 'Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid.'},
             status=status.HTTP_200_OK,
         )
         response.delete_cookie('access_token')
