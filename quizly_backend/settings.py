@@ -29,8 +29,7 @@ SECRET_KEY = 'django-insecure-q+ftxo7%i=%6^p&ktuh8d76s2=!dqnm_!&mn+w0svfv!gc!+qz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['quizly.joshuaauerbach.de']
 
 # Application definition
 
@@ -125,6 +124,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
