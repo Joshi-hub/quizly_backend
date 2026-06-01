@@ -4,7 +4,6 @@ import re
 import shutil
 import tempfile
 
-import whisper
 import yt_dlp
 from django.conf import settings
 from google import genai
@@ -79,6 +78,7 @@ def _ensure_ffmpeg_in_path():
 
 def _transcribe_audio(audio_path):
     """Transcribes an audio file to text using Whisper AI (base model)."""
+    import whisper
     _ensure_ffmpeg_in_path()
     model = whisper.load_model('base')
     result = model.transcribe(audio_path)
