@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from ..models import Quiz, Question
 from ..utils import extract_video_id, build_canonical_url
+from ..throttles import QuizCreateThrottle
 from .serializers import QuizSerializer
 from ..services.quiz_service import generate_quiz
 
@@ -56,6 +57,11 @@ class QuizListCreateView(APIView):
     """Handles GET (list) and POST (create) for the authenticated user's quizzes."""
 
     permission_classes = [IsAuthenticated]
+
+    def get_throttles(self):
+        if self.request.method == 'POST':
+            return [QuizCreateThrottle()]
+        return super().get_throttles()
 
     def get(self, request):
         """Returns all quizzes belonging to the authenticated user."""

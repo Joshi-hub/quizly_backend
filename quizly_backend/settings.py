@@ -139,5 +139,8 @@ CORS_ALLOW_CREDENTIALS = True
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'users.authentication.CookieJWTAuthentication',
-    )
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'quiz_create': '10/day',
+    },
 }

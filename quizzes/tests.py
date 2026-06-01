@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import yt_dlp
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import override_settings
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -169,6 +170,7 @@ class QuizListViewTests(APITestCase):
 class QuizCreateViewTests(APITestCase):
 
     def setUp(self):
+        cache.clear()  # reset throttle counters — SQLite reuses PKs across rolled-back transactions
         self.user = User.objects.create_user(username='alice', password='Pass123!')
         _authenticate(self.client, self.user)
 
@@ -518,3 +520,27 @@ class GenerateQuizTests(APITestCase):
         except ValueError:
             pass
         mock_rmtree.assert_called_once_with('/tmp/fake', ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# Rate limiting – POST /api/quizzes/
+# ---------------------------------------------------------------------------
+
+class QuizCreateThrottleTests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='alice', password='Pass123!')
+        refresh = RefreshToken.for_user(self.user)
+        self.client.cookies['access_token'] = str(refresh.access_token)
+
+    @patch('quizzes.throttles.QuizCreateThrottle.wait', return_value=60.0)
+    @patch('quizzes.throttles.QuizCreateThrottle.allow_request', return_value=False)
+    def test_throttled_post_returns_429(self, _allow, _wait):
+        response = self.client.post(QUIZ_LIST_URL, {'url': 'https://youtu.be/dQw4w9WgXcQ'})
+        self.assertEqual(response.status_code, 429)
+
+    @patch('quizzes.throttles.QuizCreateThrottle.wait', return_value=60.0)
+    @patch('quizzes.throttles.QuizCreateThrottle.allow_request', return_value=False)
+    def test_get_bypasses_post_throttle(self, _allow, _wait):
+        response = self.client.get(QUIZ_LIST_URL)
+        self.assertEqual(response.status_code, 200)
