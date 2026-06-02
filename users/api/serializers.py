@@ -37,5 +37,5 @@ class LoginSerializer(serializers.Serializer):
         """Authenticates the user and raises 401 on invalid credentials."""
         user = authenticate(**data)
         if not user:
-            raise AuthenticationFailed('Ungültige Anmeldedaten.')
+            raise AuthenticationFailed('Invalid credentials.')
         return {'user': user}

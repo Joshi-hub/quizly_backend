@@ -80,18 +80,14 @@ class QuizListCreateView(APIView):
     def _save_quiz(self, user, data, canonical_url):
         """Creates Quiz and Question records in the database and returns the Quiz."""
         quiz = Quiz.objects.create(
-            user=user,
-            title=data['title'],
-            description=data['description'],
-            video_url=canonical_url,
+            user=user, title=data['title'],
+            description=data['description'], video_url=canonical_url,
         )
-        for q in data.get('questions', []):
-            Question.objects.create(
-                quiz=quiz,
-                question_title=q['question_title'],
-                question_options=q['question_options'],
-                answer=q['answer'],
-            )
+        Question.objects.bulk_create([
+            Question(quiz=quiz, question_title=q['question_title'],
+                     question_options=q['question_options'], answer=q['answer'])
+            for q in data.get('questions', [])
+        ])
         return quiz
 
     def post(self, request):

@@ -53,8 +53,7 @@ class TokenRefreshCookieView(APIView):
         if not raw_refresh:
             return Response({'detail': 'Refresh token missing.'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
-            refresh = RefreshToken(raw_refresh)
-            new_access = str(refresh.access_token)
+            new_access = str(RefreshToken(raw_refresh).access_token)
         except TokenError:
             return Response({'detail': 'Refresh token invalid or expired.'}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception:
@@ -72,13 +71,11 @@ class LogoutView(APIView):
     def post(self, request):
         """Blacklists the refresh token and deletes both JWT cookies."""
         try:
-            refresh_token = request.COOKIES.get('refresh_token')
-            if refresh_token:
-                RefreshToken(refresh_token).blacklist()
+            RefreshToken(request.COOKIES.get('refresh_token')).blacklist()
         except Exception:
             pass
         response = Response(
-            {'detail': 'Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid.'},
+            {'detail': 'Log-Out successfully! Refresh token is now invalid.'},
             status=status.HTTP_200_OK,
         )
         response.delete_cookie('access_token')

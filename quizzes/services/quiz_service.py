@@ -104,16 +104,10 @@ def _parse_quiz_response(raw_text):
 
 
 def generate_quiz(canonical_url):
-    """Downloads YouTube audio, transcribes with Whisper, generates quiz with Gemini.
-
-    Raises:
-        ValueError  – caller error (download failed, video unavailable)
-        RuntimeError – server error (Gemini failure, parse error)
-    """
+    """Downloads YouTube audio, transcribes with Whisper, returns quiz dict from Gemini."""
     tmpdir = tempfile.mkdtemp()
-    tmp_base = os.path.join(tmpdir, 'audio')
     try:
-        audio_path = _download_audio(canonical_url, tmp_base)
+        audio_path = _download_audio(canonical_url, os.path.join(tmpdir, 'audio'))
         transcript = _transcribe_audio(audio_path)
         raw = _call_gemini(transcript)
         return _parse_quiz_response(raw)
