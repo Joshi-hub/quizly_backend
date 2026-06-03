@@ -8,7 +8,6 @@ import yt_dlp
 from django.conf import settings
 from google import genai
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 _QUIZ_PROMPT = """\
 Based on the following transcript, generate a quiz in valid JSON format.
@@ -53,20 +52,19 @@ def _extract_video_id(canonical_url):
 def _get_transcript_via_api(video_id):
     """Fetches the YouTube transcript using the Transcript API (no FFmpeg required).
 
-    Tries the auto-generated transcript first, then any available language.
+    Tries a direct fetch first, then searches available languages as fallback.
     Raises ValueError if no transcript is available for this video.
     """
+    api = YouTubeTranscriptApi()
     try:
-        entries = YouTubeTranscriptApi.get_transcript(video_id)
-    except (NoTranscriptFound, TranscriptsDisabled):
-        # Try any available language as fallback
+        fetched = api.fetch(video_id)
+        return ' '.join(snippet.text for snippet in fetched)
+    except Exception:
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            transcript = transcript_list.find_generated_transcript(['en', 'de', 'fr', 'es'])
-            entries = transcript.fetch()
+            transcript = api.list(video_id).find_generated_transcript(['en', 'de', 'fr', 'es'])
+            return ' '.join(snippet.text for snippet in transcript.fetch())
         except Exception as exc:
             raise ValueError(f'No transcript available for this video: {exc}') from exc
-    return ' '.join(entry['text'] for entry in entries)
 
 
 def _get_ydl_opts(output_path):

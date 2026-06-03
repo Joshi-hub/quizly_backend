@@ -492,14 +492,16 @@ class GenerateQuizTests(APITestCase):
     @patch('quizzes.services.quiz_service._call_gemini', return_value=json.dumps(SAMPLE_QUIZ_DATA))
     @patch('quizzes.services.quiz_service._transcribe_audio', return_value='Sample transcript')
     @patch('quizzes.services.quiz_service._download_audio', return_value='/tmp/fake/audio.mp3')
-    def test_returns_parsed_quiz_dict(self, _dl, _tr, _gemini, _rmtree):
+    @patch('quizzes.services.quiz_service._get_transcript_via_api', side_effect=ValueError('no transcript'))
+    def test_returns_parsed_quiz_dict(self, _transcript, _dl, _tr, _gemini, _rmtree):
         result = generate_quiz('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         self.assertEqual(result['title'], 'Test Quiz')
         self.assertEqual(len(result['questions']), 10)
 
     @patch('quizzes.services.quiz_service.shutil.rmtree')
     @patch('quizzes.services.quiz_service._download_audio', side_effect=ValueError('unavailable'))
-    def test_propagates_value_error_from_download(self, _dl, _rmtree):
+    @patch('quizzes.services.quiz_service._get_transcript_via_api', side_effect=ValueError('no transcript'))
+    def test_propagates_value_error_from_download(self, _transcript, _dl, _rmtree):
         with self.assertRaises(ValueError):
             generate_quiz('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
 
@@ -507,14 +509,16 @@ class GenerateQuizTests(APITestCase):
     @patch('quizzes.services.quiz_service._call_gemini', return_value='bad json {{{')
     @patch('quizzes.services.quiz_service._transcribe_audio', return_value='transcript')
     @patch('quizzes.services.quiz_service._download_audio', return_value='/tmp/fake/audio.mp3')
-    def test_propagates_runtime_error_from_parse(self, _dl, _tr, _gemini, _rmtree):
+    @patch('quizzes.services.quiz_service._get_transcript_via_api', side_effect=ValueError('no transcript'))
+    def test_propagates_runtime_error_from_parse(self, _transcript, _dl, _tr, _gemini, _rmtree):
         with self.assertRaises(RuntimeError):
             generate_quiz('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
 
     @patch('quizzes.services.quiz_service.shutil.rmtree')
     @patch('quizzes.services.quiz_service._download_audio', side_effect=ValueError('fail'))
     @patch('quizzes.services.quiz_service.tempfile.mkdtemp', return_value='/tmp/fake')
-    def test_cleanup_runs_even_on_failure(self, _mkdtemp, _dl, mock_rmtree):
+    @patch('quizzes.services.quiz_service._get_transcript_via_api', side_effect=ValueError('no transcript'))
+    def test_cleanup_runs_even_on_failure(self, _transcript, _mkdtemp, _dl, mock_rmtree):
         try:
             generate_quiz('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         except ValueError:
