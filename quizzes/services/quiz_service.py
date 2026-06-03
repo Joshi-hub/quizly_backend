@@ -7,6 +7,8 @@ import tempfile
 import yt_dlp
 from django.conf import settings
 from google import genai
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 _QUIZ_PROMPT = """\
 Based on the following transcript, generate a quiz in valid JSON format.
@@ -40,6 +42,31 @@ def _strip_markdown(text):
     """Removes markdown code fences from a string."""
     text = re.sub(r'^```(?:json)?\s*\n?', '', text.strip())
     return re.sub(r'\n?```\s*$', '', text).strip()
+
+
+def _extract_video_id(canonical_url):
+    """Extracts the 11-character video ID from a canonical YouTube watch URL."""
+    match = re.search(r'[?&]v=([0-9A-Za-z_-]{11})', canonical_url)
+    return match.group(1) if match else None
+
+
+def _get_transcript_via_api(video_id):
+    """Fetches the YouTube transcript using the Transcript API (no FFmpeg required).
+
+    Tries the auto-generated transcript first, then any available language.
+    Raises ValueError if no transcript is available for this video.
+    """
+    try:
+        entries = YouTubeTranscriptApi.get_transcript(video_id)
+    except (NoTranscriptFound, TranscriptsDisabled):
+        # Try any available language as fallback
+        try:
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            transcript = transcript_list.find_generated_transcript(['en', 'de', 'fr', 'es'])
+            entries = transcript.fetch()
+        except Exception as exc:
+            raise ValueError(f'No transcript available for this video: {exc}') from exc
+    return ' '.join(entry['text'] for entry in entries)
 
 
 def _get_ydl_opts(output_path):
@@ -104,7 +131,24 @@ def _parse_quiz_response(raw_text):
 
 
 def generate_quiz(canonical_url):
-    """Downloads YouTube audio, transcribes with Whisper, returns quiz dict from Gemini."""
+    """Generates a quiz dict from a YouTube URL.
+
+    Strategy:
+    1. Fetch transcript via YouTube Transcript API (fast, no FFmpeg needed).
+    2. If no transcript is available, fall back to yt-dlp + Whisper (requires FFmpeg).
+    """
+    video_id = _extract_video_id(canonical_url)
+
+    # Primary path: YouTube Transcript API (no local dependencies needed)
+    if video_id:
+        try:
+            transcript = _get_transcript_via_api(video_id)
+            raw = _call_gemini(transcript)
+            return _parse_quiz_response(raw)
+        except ValueError:
+            pass  # No transcript available — fall through to audio download
+
+    # Fallback: download audio and transcribe locally with Whisper
     tmpdir = tempfile.mkdtemp()
     try:
         audio_path = _download_audio(canonical_url, os.path.join(tmpdir, 'audio'))

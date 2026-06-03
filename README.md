@@ -5,15 +5,16 @@ Django REST API backend for Quizly — generates quizzes from YouTube videos usi
 ## How It Works
 
 1. User submits a YouTube URL
-2. **yt-dlp** downloads the video audio and converts it to mp3 via **FFMPEG**
-3. **Whisper AI** transcribes the audio locally
-4. **Gemini Flash** generates 10 multiple-choice questions from the transcript
+2. The backend tries to fetch the transcript via **YouTube Transcript API** (fast, no FFmpeg required)
+3. If no transcript is available, **yt-dlp** downloads the audio and **Whisper AI** transcribes it locally (requires FFMPEG)
+4. **Gemini 2.5 Flash** generates 10 multiple-choice questions from the transcript
 5. The quiz is saved to the database and returned to the frontend
 
 ## Prerequisites
 
-### 1. FFMPEG (required)
-FFMPEG must be installed globally on your system.
+### 1. FFMPEG (optional — only needed when a video has no transcript)
+Most YouTube videos have auto-generated transcripts and work without FFMPEG.
+FFMPEG is only used as a fallback when no transcript is available.
 
 **Windows (winget):**
 ```bash
