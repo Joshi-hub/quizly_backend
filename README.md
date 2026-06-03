@@ -12,9 +12,9 @@ Django REST API backend for Quizly — generates quizzes from YouTube videos usi
 
 ## Prerequisites
 
-### 1. FFMPEG (optional — only needed when a video has no transcript)
-Most YouTube videos have auto-generated transcripts and work without FFMPEG.
-FFMPEG is only used as a fallback when no transcript is available.
+### 1. FFMPEG (required)
+FFMPEG is required for audio extraction when a YouTube video has no available transcript.
+Whisper AI cannot process audio without it.
 
 **Windows (winget):**
 ```bash
@@ -76,11 +76,13 @@ python manage.py runserver
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root with the following variables:
 
-```
-GEMINI_API_KEY=AIzaSy...your_key_here
-```
+| Variable | Required | Description |
+|---|---|---|
+| `SECRET_KEY` | Yes | Django secret key — generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+| `GEMINI_API_KEY` | Yes | Google AI Studio key — [get one here](https://aistudio.google.com/app/apikey) |
+| `FFMPEG_LOCATION` | Yes | Full path to the FFmpeg `bin/` folder (e.g. `C:\ffmpeg\bin`) |
 
 ---
 
