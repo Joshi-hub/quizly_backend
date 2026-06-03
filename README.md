@@ -115,12 +115,12 @@ All requests to protected endpoints must include `credentials: 'include'`.
 
 | Component | Technology |
 |-----------|------------|
-| Framework | Django 5.1 + Django REST Framework |
+| Framework | Django 6.0.5 + Django REST Framework |
 | Auth | JWT via `djangorestframework-simplejwt` |
 | Audio download | yt-dlp |
 | Audio conversion | FFMPEG |
 | Transcription | Whisper AI (local, `base` model) |
-| Quiz generation | Google Gemini 2.0 Flash |
+| Quiz generation | Google Gemini 2.5 Flash |
 | Database | SQLite (development) |
 
 ---
