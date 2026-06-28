@@ -112,7 +112,7 @@ def _transcribe_audio(audio_path):
 
 def _call_gemini(transcript):
     """Sends the transcript to Gemini and returns the raw response text."""
-    client = genai.Client()
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=_QUIZ_PROMPT + transcript[:8000],
