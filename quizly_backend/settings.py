@@ -6,8 +6,11 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-q+ftxo7%i=%6^p&ktuh8d76s2=!dqnm_!&mn+w0svfv!gc!+qz')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is not set")
+
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['quizly.joshuaauerbach.de', 'localhost', '127.0.0.1']
 
@@ -84,6 +87,7 @@ FFMPEG_LOCATION = os.environ.get('FFMPEG_LOCATION', '')
 
 CORS_ALLOWED_ORIGINS = [
     'https://quizly.joshuaauerbach.de',
+    'https://quizly-app.joshuaauerbach.de',
 ]
 if DEBUG:
     CORS_ALLOWED_ORIGINS += [
